@@ -18,3 +18,9 @@ docker run -d \
    --restart always \
    --volume kiwi.config:/root/kiwi.config \
    ${IMAGE_TAG}
+
+# Clean previous container logs
+for LOG in $(find /var/lib/docker/containers -name *-json.log); do
+  echo "Clean container logs: $LOG"
+  cat /dev/null > $LOG
+done
