@@ -14,7 +14,7 @@ fi
 # Check internet connectivity
 NETWORK_CHECK_URL="1.0.0.1"
 NETWORK_CHECK_RESPONSE="301"
-if [ $(curl -I -s --connect-timeout 15 --insecure --retry 10 ${NETWORK_CHECK_URL} -w %{http_code} | tail -n1) -eq ${NETWORK_CHECK_RESPONSE} ]; then
+if [ $(curl -I -s --connect-timeout 15 --retry 10 ${NETWORK_CHECK_URL} -w %{http_code} | tail -n1) -eq ${NETWORK_CHECK_RESPONSE} ]; then
     echo "Internet connected, continue."
 else
     echo "Internet not connected, exiting."
@@ -22,8 +22,8 @@ else
 fi
 
 # Fetch IP from DoH
-GITHUB_RWA_IP="$(curl -H 'accept: application/dns-json' 'https://1.0.0.1/dns-query?name=raw.githubusercontent.com&type=A' -s | jq -r '.Answer[1].data')"
-GITHUB_CODELOAD_IP="$(curl -H 'accept: application/dns-json' 'https://1.0.0.1/dns-query?name=codeload.github.com&type=A' -s | jq -r '.Answer[0].data')"
+GITHUB_RWA_IP="$(curl -H 'accept: application/dns-json' -s --connect-timeout 15 --retry 10 'https://1.0.0.1/dns-query?name=raw.githubusercontent.com&type=A' | jq -r '.Answer[1].data')"
+GITHUB_CODELOAD_IP="$(curl -H 'accept: application/dns-json' -s --connect-timeout 15 --retry 10 'https://1.0.0.1/dns-query?name=codeload.github.com&type=A' | jq -r '.Answer[0].data')"
 
 # Define global environment variables
 APP_NAME="flydog-sdr"
