@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # Define global environment variables
 IMAGE_TAG="registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest"
