@@ -31,6 +31,8 @@ CURL_ARGS="-L -s --connect-timeout 15 --insecure --retry 10"
 CURRENT_VER="$(curl ${CURL_ARGS} http://${APP_NAME}:8073/VER | jq --raw-output '(.maj|tostring) + (.min|tostring)')"
 REMOTE_VER="$(curl ${CURL_ARGS} --resolve raw.githubusercontent.com:443:${GITHUB_RWA_IP} https://raw.githubusercontent.com/flydog-sdr/FlyDog_SDR_GPS/master/Makefile | head -2 | cut -d " " -f3 | tr -d "\n")"
 SCRIPTS_FETCH_URL="https://codeload.github.com/flydog-sdr/customised-scripts/zip/master"
+IMAGE_TAG="registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest"
+LOCAL_IMAGE_ID=$(docker inspect -f {{".Id"}} ${IMAGE_TAG})
 
 # Version comparison
 if [ ${CURRENT_VER} -ne ${REMOTE_VER} ]; then
@@ -53,7 +55,7 @@ else
 fi
 
 # Execute deployment scripts
-bash -c /tmp/customised-scripts/deploy.sh
+bash -c "IMAGE_TAG=${IMAGE_TAG} LOCAL_IMAGE_ID=${LOCAL_IMAGE_ID} /tmp/customised-scripts/deploy.sh"
 
 # Purge previous image for saving disk space
 echo "Purging all unused or dangling images, containers."
