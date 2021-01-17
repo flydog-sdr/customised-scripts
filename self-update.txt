@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # SCRIPT_ID variable for self-update
-SCRIPT_ID=3da64aea
+SCRIPT_ID=3da85fea
 
 # check if Auto-update is enabled
 if [ $(cat /etc/kiwi.config/_UPDATE) -eq 1 ]; then
@@ -12,8 +12,8 @@ else
 fi
 
 # Check internet connectivity
-NETWORK_CHECK_URL="1.0.0.1"
-NETWORK_CHECK_RESPONSE="301"
+NETWORK_CHECK_URL="baidu.com"
+NETWORK_CHECK_RESPONSE="200"
 if [ $(curl -I -s --connect-timeout 60 --retry 30 ${NETWORK_CHECK_URL} -w %{http_code} | tail -n1) -eq ${NETWORK_CHECK_RESPONSE} ]; then
     echo "Internet connected, continue."
 else
@@ -21,16 +21,12 @@ else
     exit 1
 fi
 
-# Fetch IP from DoH
-GITHUB_RWA_IP="$(curl -H 'accept: application/dns-json' -s --connect-timeout 60 --retry 30 'https://1.0.0.1/dns-query?name=raw.githubusercontent.com&type=A' | jq -r '.Answer[1].data')"
-GITHUB_CODELOAD_IP="$(curl -H 'accept: application/dns-json' -s --connect-timeout 60 --retry 30 'https://1.0.0.1/dns-query?name=codeload.github.com&type=A' | jq -r '.Answer[0].data')"
-
 # Define global environment variables
 APP_NAME="flydog-sdr"
 CURL_ARGS="-L -s --connect-timeout 60 --insecure --retry 30"
 CURRENT_VER="$(curl ${CURL_ARGS} http://${APP_NAME}:8073/VER | jq --raw-output '(.maj|tostring) + (.min|tostring)')"
-REMOTE_VER="$(curl ${CURL_ARGS} --resolve raw.githubusercontent.com:443:${GITHUB_RWA_IP} https://raw.githubusercontent.com/flydog-sdr/FlyDog_SDR_GPS/master/Makefile | head -2 | cut -d " " -f3 | tr -d "\n")"
-SCRIPTS_FETCH_URL="https://codeload.github.com/flydog-sdr/customised-scripts/zip/master"
+REMOTE_VER="$(curl ${CURL_ARGS} https://bclswl0827.coding.net/p/flydog-sdr/d/api/git/raw/master/VER)"
+SCRIPTS_FETCH_URL="https://bclswl0827.coding.net/p/flydog-sdr/d/api/git/archive/master"
 IMAGE_TAG="registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest"
 LOCAL_IMAGE_ID=$(docker inspect -f {{".Id"}} ${IMAGE_TAG})
 
@@ -44,13 +40,13 @@ fi
 
 # Fetch deployment scripts
 if [ ! -f "/tmp/customised-scripts" ];then
-    curl ${CURL_ARGS} --resolve codeload.github.com:443:${GITHUB_CODELOAD_IP} ${SCRIPTS_FETCH_URL} | busybox unzip - -d /tmp
-    mv -f /tmp/customised-scripts-master /tmp/customised-scripts
+    curl ${CURL_ARGS} ${SCRIPTS_FETCH_URL} | busybox unzip - -d /tmp
+    mv -f /tmp/bclswl0827-flydog-sdr-api-master /tmp/customised-scripts
     chmod -R 755 /tmp/customised-scripts
 else
     rm -rf /tmp/customised-scripts
-    curl ${CURL_ARGS} --resolve codeload.github.com:443:${GITHUB_CODELOAD_IP} ${SCRIPTS_FETCH_URL} | busybox unzip - -d /tmp
-    mv -f /tmp/customised-scripts-master /tmp/customised-scripts
+    curl ${CURL_ARGS} ${SCRIPTS_FETCH_URL} | busybox unzip - -d /tmp
+    mv -f /tmp/bclswl0827-flydog-sdr-api-master /tmp/customised-scripts
     chmod -R 755 /tmp/customised-scripts
 fi
 
