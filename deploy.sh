@@ -1,38 +1,59 @@
 #!/bin/bash
 
-# Define global environment variables
-IMAGE_TAG="registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest"
-LOCAL_IMAGE_ID=$(docker inspect -f {{".Id"}} ${IMAGE_TAG})
+# Define basic variables
+IMAGE_LIB="registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr"
+IMAGE_TAG="latest"
+LOCAL_IMAGE_ID=$(docker inspect -f {{".Id"}} ${IMAGE_LIB}:${IMAGE_TAG})
+BACKUP_TAG="$(date +'%Y%m%d')"
 
-# Remove previous container and old image
-docker rm -f flydog-sdr
-docker image rm -f ${LOCAL_IMAGE_ID}
+backup_old_image() {
+  docker tag ${LOCAL_IMAGE_ID} ${IMAGE_LIB}:${BACKUP_TAG}
+  docker image rm ${IMAGE_LIB}:${IMAGE_TAG}
+}
 
-# Pull new image and deploy
-docker run -d \
-   --hostname flydog-sdr \
-   --name flydog-sdr \
-   --network flydog-sdr \
-   --privileged \
-   --publish 8073:8073 \
-   --restart always \
-   --volume kiwi.config:/root/kiwi.config \
-   ${IMAGE_TAG}
+pull_latest_image() {
+  if ! docker pull ${IMAGE_LIB}:${IMAGE_TAG}; then
+    echo "error: Download failed! Falling back to deploy old instance."
+    docker tag ${LOCAL_IMAGE_ID} ${IMAGE_LIB}:${IMAGE_TAG}
+    docker image rm ${IMAGE_LIB}:${BACKUP_TAG}
+    compatibility_settings
+  fi
+}
 
-# Update Frpc configuration for old version
-sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
-    -i /etc/kiwi.config/frpc*
+deploy_new_instance() {
+  docker rm -f flydog-sdr
+  docker image rm -f ${LOCAL_IMAGE_ID}
+  docker run -d \
+     --hostname flydog-sdr \
+     --name flydog-sdr \
+     --network flydog-sdr \
+     --privileged \
+     --publish 8073:8073 \
+     --restart always \
+     --volume kiwi.config:/root/kiwi.config \
+     ${IMAGE_LIB}:${IMAGE_TAG}
+}
 
-# Self-update for /usr/bin/updater.sh
-cat /tmp/customised-scripts/self-update.txt > /usr/bin/updater.sh
+compatibility_settings() {
+  sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
+      -i /etc/kiwi.config/frpc*
+  docker image rm ${IMAGE_LIB}:${IMAGE_TAG}
+  cat ${PWD}/self-update.txt > /usr/bin/updater.sh
+}
 
-# Purge previous image for saving disk space
-echo "Purging all unused or dangling images, containers."
-docker container prune -f
-docker image prune -f
+saving_disk_space() {
+  docker container prune -f
+  docker image prune -f
+  rm -rf ${PWD}
+}
 
-# Finish upgrading stage
-rm -rf /tmp/customised-scripts
-echo "Upgrade finished!"
+main() {
+  backup_old_image
+  pull_latest_image
+  deploy_new_instance
+  compatibility_settings
+  saving_disk_space
+  echo "Upgrade finished!"
+}
 
-exit 0
+main "$@"

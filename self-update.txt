@@ -1,54 +1,96 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# SCRIPT_ID variable for self-update
+# SCRIPT_ID variable for self-update (Compatible with the old version)
 SCRIPT_ID=3da85fea
 
-# check if Auto-update is enabled
-if [ $(cat /etc/kiwi.config/_UPDATE) -eq 1 ]; then
-    echo "Auto-update is enabled, will now check for update."
-else
-    echo "Auto-update is disabled, exiting."
-    exit 0
-fi
+# This Bash script to install the latest release of FlyDog SDR:
+# https://github.com/flydog-sdr/FlyDog_SDR_GPS
 
-# Check internet connectivity
+# Depends on BusyBox, cURL and jq, please solve it yourself
+# You may plan to execute this Bash script regularly:
+# install -m 755 self-update.txt /usr/bin/updater.sh
+# 0 4 * * * /usr/bin/updater.sh
+
+# The URL of the script project is:
+# https://github.com/flydog-sdr/customised-scripts
+
+# The URL of the script is:
+# https://raw.githubusercontent.com/flydog-sdr/customised-scripts/master/self-update.txt
+
+# Define basic variables
 NETWORK_CHECK_URL="baidu.com"
 NETWORK_CHECK_RESPONSE="200"
-if [ $(curl -I -s --connect-timeout 60 --retry 30 ${NETWORK_CHECK_URL} -w %{http_code} | tail -n1) -eq ${NETWORK_CHECK_RESPONSE} ]; then
-    echo "Internet connected, continue."
-else
-    echo "Internet not connected, exiting."
+CONF_DIR="/etc/kiwi.config"
+DOWNLOAD_LINK="https://bclswl0827.coding.net/p/flydog-sdr/d/api/git/archive/master"
+DEPLOY_SCRIPT="deploy.sh"
+DIR_TMP="$(mktemp -d)"
+
+# System utilities
+BUSYBOX_PATH=$(type -P busybox)
+CURL_PATH=$(type -P curl)
+JQ_PATH=$(type -P jq)
+
+curl() {
+  ${CURL_PATH} -L -q --retry 5 --retry-delay 10 --retry-max-time 60 "$@"
+}
+
+check_if_running_as_root() {
+  if [[ ${UID} -ne '0' ]]; then
+    echo "Not running with root, exiting..."
     exit 1
-fi
+  fi
+}
 
-# Define global environment variables
-APP_NAME="flydog-sdr"
-CURL_ARGS="-L -s --connect-timeout 60 --insecure --retry 30"
-CURRENT_VER="$(curl ${CURL_ARGS} http://${APP_NAME}:8073/VER | jq --raw-output '(.maj|tostring) + (.min|tostring)')"
-REMOTE_VER="$(curl ${CURL_ARGS} https://bclswl0827.coding.net/p/flydog-sdr/d/api/git/raw/master/VER)"
-SCRIPTS_FETCH_URL="https://bclswl0827.coding.net/p/flydog-sdr/d/api/git/archive/master"
-IMAGE_TAG="registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest"
-LOCAL_IMAGE_ID=$(docker inspect -f {{".Id"}} ${IMAGE_TAG})
-
-# Version comparison
-if [ ${CURRENT_VER} -ne ${REMOTE_VER} ]; then
-    echo "New version detected, will now fetch deployment scripts and upgrade."
-else
-    echo "Already the latest version, exiting."
+check_if_update_is_enabled() {
+  docker inspect -f {{".State.Running"}} flydog-sdr | grep -q -s "true"
+  if [[ $? -ne 0 ]]; then
+	echo "FlyDog SDR is not running, exiting..."
+    exit 1
+  fi
+  if [[ $(cat ${CONF_DIR}/_UPDATE) -ne 1 ]]; then
+    echo "Auto-update is disabled, exiting..."
     exit 0
-fi
+  fi
+}
 
-# Fetch deployment scripts
-if [ ! -f "/tmp/customised-scripts" ];then
-    curl ${CURL_ARGS} ${SCRIPTS_FETCH_URL} | busybox unzip - -d /tmp
-    mv -f /tmp/bclswl0827-flydog-sdr-api-master /tmp/customised-scripts
-    chmod -R 755 /tmp/customised-scripts
-else
-    rm -rf /tmp/customised-scripts
-    curl ${CURL_ARGS} ${SCRIPTS_FETCH_URL} | busybox unzip - -d /tmp
-    mv -f /tmp/bclswl0827-flydog-sdr-api-master /tmp/customised-scripts
-    chmod -R 755 /tmp/customised-scripts
-fi
+check_internet_connectivity() {
+  if [[ $(${CURL_PATH} -I -s ${NETWORK_CHECK_URL} -w %{http_code} | tail -n1) != ${NETWORK_CHECK_RESPONSE} ]]; then
+    echo "Internet is not connected, exiting..."
+    exit 1
+  fi
+}
 
-# Execute deployment scripts
-bash -c "IMAGE_TAG=${IMAGE_TAG} LOCAL_IMAGE_ID=${LOCAL_IMAGE_ID} /tmp/customised-scripts/deploy.sh"
+download_files() {
+  if ! curl -R -H 'Cache-Control: no-cache' -o ${2}/scripts.zip ${1}; then
+    echo "error: Download failed! Please check your network or try again."
+    exit 1
+  fi
+  chmod -R 755 ${2}
+  ${BUSYBOX_PATH} unzip ${2}/scripts.zip -d ${2}
+}
+
+compare_version() {
+  LOCAL_VER=$(curl -s http://flydog-sdr:8073/VER | ${JQ_PATH} --raw-output '(.maj|tostring) + (.min|tostring)')
+  REMOTE_VER=$(find ${DIR_TMP} -name "VER" | xargs cat)
+  if [[ ${CURRENT_VER} -eq ${REMOTE_VER} ]]; then
+    echo "Already the latest version, exiting..."
+    rm -rf "${DIR_TMP}"
+    exit 0
+  fi
+}
+
+upgrade_flydog_sdr() {
+  find ${DIR_TMP} -name "${DEPLOY_SCRIPT}" | bash
+  rm -rf "${DIR_TMP}"
+}
+
+main() {
+  check_if_running_as_root
+  check_if_update_is_enabled
+  check_internet_connectivity
+  download_files ${DOWNLOAD_LINK} ${DIR_TMP}
+  compare_version
+  upgrade_flydog_sdr
+}
+
+main "$@"
