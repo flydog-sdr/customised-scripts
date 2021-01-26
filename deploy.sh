@@ -22,7 +22,6 @@ pull_latest_image() {
 
 deploy_new_instance() {
   docker rm -f flydog-sdr
-  docker image rm -f ${LOCAL_IMAGE_ID}
   docker run -d \
      --hostname flydog-sdr \
      --name flydog-sdr \
@@ -32,6 +31,7 @@ deploy_new_instance() {
      --restart always \
      --volume kiwi.config:/root/kiwi.config \
      ${IMAGE_LIB}:${IMAGE_TAG}
+  docker image rm -f ${LOCAL_IMAGE_ID}
 }
 
 compatibility_settings() {
