@@ -22,7 +22,8 @@ pull_latest_image() {
 }
 
 deploy_new_instance() {
-  docker rm -f flydog-sdr
+  docker stop flydog-sdr
+  docker rm flydog-sdr
   docker run -d \
      --hostname flydog-sdr \
      --name flydog-sdr \
