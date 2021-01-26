@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Define basic variables
+BASE_PATH=$(cd `dirname $0`; pwd)
 IMAGE_LIB="registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr"
 IMAGE_TAG="latest"
 LOCAL_IMAGE_ID=$(docker inspect -f {{".Id"}} ${IMAGE_LIB}:${IMAGE_TAG})
@@ -37,14 +38,13 @@ deploy_new_instance() {
 compatibility_settings() {
   sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
       -i /etc/kiwi.config/frpc*
-  docker image rm ${IMAGE_LIB}:${IMAGE_TAG}
-  cat ${PWD}/self-update.txt > /usr/bin/updater.sh
+  cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
 }
 
 saving_disk_space() {
   docker container prune -f
   docker image prune -f
-  rm -rf ${PWD}
+  rm -rf ${BASE_PATH}
 }
 
 main() {
@@ -55,5 +55,4 @@ main() {
   saving_disk_space
   echo "Upgrade finished!"
 }
-
 main "$@"

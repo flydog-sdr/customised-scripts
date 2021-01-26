@@ -65,12 +65,12 @@ download_files() {
     echo "error: Download failed! Please check your network or try again."
     exit 1
   fi
-  chmod -R 755 ${2}
   ${BUSYBOX_PATH} unzip ${2}/scripts.zip -d ${2}
+  chmod -R 755 ${2}
 }
 
 compare_version() {
-  LOCAL_VER=$(curl -s http://flydog-sdr:8073/VER | ${JQ_PATH} --raw-output '(.maj|tostring) + (.min|tostring)')
+  CURRENT_VER=$(curl -s http://flydog-sdr:8073/VER | ${JQ_PATH} --raw-output '(.maj|tostring) + (.min|tostring)')
   REMOTE_VER=$(find ${DIR_TMP} -name "VER" | xargs cat)
   if [[ ${CURRENT_VER} -eq ${REMOTE_VER} ]]; then
     echo "Already the latest version, exiting..."
@@ -92,5 +92,4 @@ main() {
   compare_version
   upgrade_flydog_sdr
 }
-
 main "$@"
