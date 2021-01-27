@@ -42,6 +42,7 @@ compatibility_settings() {
       -i /etc/kiwi.config/frpc*
   cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
   cat ${BASE_PATH}/VER > /etc/kiwi.config/_VERSION
+  chown -R www-data:www-data /etc/kiwi.config/_*
 }
 
 saving_disk_space() {
