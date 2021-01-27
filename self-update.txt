@@ -83,7 +83,7 @@ compare_version() {
     CURRENT_VER=$(curl -s http://flydog-sdr:8073/VER | ${JQ_PATH} --raw-output '(.maj|tostring) + (.min|tostring)')
   fi
   if [[ ${REMOTE_VER} -eq ${CURRENT_VER} ]]; then
-    echo "Already the latest version, exiting..."
+    echo " | Already the latest version, exiting..."
     rm -rf "${DIR_TMP}"
     exit 0
   fi
