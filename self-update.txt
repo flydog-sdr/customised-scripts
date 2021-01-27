@@ -46,6 +46,7 @@ check_if_update_is_enabled() {
   if [[ $? -ne 0 ]]; then
     echo "FlyDog SDR is not running, will now wake up."
     docker restart flydog-sdr
+    sleep 5s
   fi
   if [[ $(cat ${CONF_DIR}/_UPDATE) -ne 1 ]]; then
     echo "Auto-update is disabled, exiting..."
@@ -71,7 +72,7 @@ download_files() {
 
 compare_version() {
   REMOTE_VER=$(find ${DIR_TMP} -name "VER" | xargs cat)
-  if ! curl -s http://flydog-sdr:8073/VER; then
+  if ! curl http://flydog-sdr:8073/VER; then
     if [[ ! -f /etc/kiwi.config/_VERSION ]]; then
       echo 0 > /etc/kiwi.config/_VERSION
       CURRENT_VER=$(cat /etc/kiwi.config/_VERSION)
