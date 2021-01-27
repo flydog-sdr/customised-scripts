@@ -40,6 +40,7 @@ compatibility_settings() {
   sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
       -i /etc/kiwi.config/frpc*
   cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
+  cat ${BASE_PATH}/VER > /etc/kiwi.config/_VERSION
 }
 
 saving_disk_space() {
