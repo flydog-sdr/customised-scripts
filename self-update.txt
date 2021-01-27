@@ -102,4 +102,4 @@ main() {
   compare_version
   upgrade_flydog_sdr
 }
-main "$@"
+main "$@"; exit
