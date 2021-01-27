@@ -79,7 +79,7 @@ compare_version() {
       CURRENT_VER=$(cat /etc/kiwi.config/_VERSION)
     fi
   else
-    CURRENT_VER=$(curl http://flydog-sdr:8073/VER | ${JQ_PATH} --raw-output '(.maj|tostring) + (.min|tostring)')
+    CURRENT_VER=$(curl -s http://flydog-sdr:8073/VER | ${JQ_PATH} --raw-output '(.maj|tostring) + (.min|tostring)')
   fi
   if [[ ${REMOTE_VER} -eq ${CURRENT_VER} ]]; then
     echo "Already the latest version, exiting..."
