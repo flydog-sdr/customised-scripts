@@ -18,6 +18,7 @@ pull_latest_image() {
     docker tag ${LOCAL_IMAGE_ID} ${IMAGE_LIB}:${IMAGE_TAG}
     docker image rm ${IMAGE_LIB}:${BACKUP_TAG}
     compatibility_settings
+    saving_disk_space
     exit 1
   fi
 }
