@@ -31,7 +31,7 @@ CURL_PATH=$(type -P curl)
 JQ_PATH=$(type -P jq)
 
 curl() {
-  ${CURL_PATH} -L -q --retry 5 --retry-delay 10 --retry-max-time 60 "$@"
+  ${CURL_PATH} -L -q --retry 10 --retry-delay 10 --retry-max-time 60 "$@"
 }
 
 check_if_running_as_root() {

@@ -14,12 +14,17 @@ backup_old_image() {
 
 pull_latest_image() {
   if ! docker pull ${IMAGE_LIB}:${IMAGE_TAG}; then
-    echo "error: Download failed! Falling back to deploy old instance."
-    docker tag ${LOCAL_IMAGE_ID} ${IMAGE_LIB}:${IMAGE_TAG}
-    docker image rm ${IMAGE_LIB}:${BACKUP_TAG}
-    compatibility_settings
-    saving_disk_space
-    exit 1
+    echo "error: Download failed! Trying to use backup node."
+    if ! docker pull bclswl0827/flydog-sdr:${IMAGE_TAG}; then
+      echo "error: Download failed! Falling back to deploy old instance."
+      docker tag ${LOCAL_IMAGE_ID} ${IMAGE_LIB}:${IMAGE_TAG}
+      docker image rm ${IMAGE_LIB}:${BACKUP_TAG}
+      compatibility_settings
+      saving_disk_space
+      exit 1
+    fi
+    docker tag bclswl0827/flydog-sdr:${IMAGE_TAG} ${IMAGE_LIB}:${IMAGE_TAG}
+    docker image rm bclswl0827/flydog-sdr:${IMAGE_TAG}
   fi
 }
 
