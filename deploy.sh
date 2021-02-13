@@ -45,11 +45,19 @@ deploy_new_instance() {
 }
 
 compatibility_settings() {
+  # For FlyDog SDR under v1.4282
   sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
       -i /etc/kiwi.config/frpc*
+  # For FlyDog SDR under v1.4293
   cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
   cat ${BASE_PATH}/VER > /etc/kiwi.config/_VERSION
   chown -R www-data:www-data /etc/kiwi.config/_*
+  # For FlyDog SDR under v1.433
+  if [[ ! -f /etc/kiwi.config/samples/timecode.test.au ]]; then
+    if ! curl -L -q --retry 10 --retry-delay 10 --retry-max-time 60 -o /etc/kiwi.config/samples/timecode.test.au https://bclswl0827.coding.net/p/flydog-sdr/d/file/git/raw/master/timecode.test.au; then
+      curl -L -q --retry 10 --retry-delay 10 --retry-max-time 60 -o /etc/kiwi.config/samples/timecode.test.au https://raw.githubusercontent.com/jks-prv/Beagle_SDR_GPS/master/unix_env/kiwi.config/samples/timecode.test.au
+    fi
+  fi
 }
 
 saving_disk_space() {
