@@ -73,11 +73,11 @@ download_files() {
 compare_version() {
   REMOTE_VER=$(find ${DIR_TMP} -name "VER" | xargs cat)
   if ! curl http://flydog-sdr:8073/VER; then
-    if [[ ! -f /etc/kiwi.config/_VERSION ]]; then
-      echo 0 > /etc/kiwi.config/_VERSION
-      CURRENT_VER=$(cat /etc/kiwi.config/_VERSION)
+    if [[ ! -f /etc/kiwi.config/_VER ]]; then
+      echo 0 > /etc/kiwi.config/_VER
+      CURRENT_VER=$(cat /etc/kiwi.config/_VER)
     else
-      CURRENT_VER=$(cat /etc/kiwi.config/_VERSION)
+      CURRENT_VER=$(cat /etc/kiwi.config/_VER)
     fi
   else
     CURRENT_VER=$(curl -s http://flydog-sdr:8073/VER | ${JQ_PATH} --raw-output '(.maj|tostring) + (.min|tostring)')
