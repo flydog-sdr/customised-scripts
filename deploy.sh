@@ -50,7 +50,7 @@ compatibility_settings() {
       -i /etc/kiwi.config/frpc*
   # For FlyDog SDR under v1.4293
   cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
-  cat ${BASE_PATH}/VER > /etc/kiwi.config/_VERSION
+  cat ${BASE_PATH}/VER > /etc/kiwi.config/_VER
   # For FlyDog SDR under v1.433
   #if [[ ! -f /etc/kiwi.config/samples/timecode.test.au ]]; then
   #  if ! curl -L -q --retry 10 --retry-delay 10 --retry-max-time 60 -o /etc/kiwi.config/samples/timecode.test.au https://bclswl0827.coding.net/p/flydog-sdr/d/file/git/raw/master/timecode.test.au; then
