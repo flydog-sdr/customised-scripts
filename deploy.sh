@@ -48,7 +48,7 @@ compatibility_settings() {
   cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
   cat ${BASE_PATH}/VER > /etc/kiwi.config/_VER
   # For FlyDog SDR under v1.4282
-  sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
+  #sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
       -i /etc/kiwi.config/frpc*
   # For FlyDog SDR under v1.4293
   # For FlyDog SDR under v1.433
@@ -57,7 +57,7 @@ compatibility_settings() {
   #    curl -L -q --retry 10 --retry-delay 10 --retry-max-time 60 -o /etc/kiwi.config/samples/timecode.test.au https://raw.githubusercontent.com/jks-prv/Beagle_SDR_GPS/master/unix_env/kiwi.config/samples/timecode.test.au
   #  fi
   #fi
-  # For FlyDog SDR under v1.458
+  # For FlyDog SDR under v1.4541
   rm -rf /etc/kiwi.config/_VERSION
 }
 
