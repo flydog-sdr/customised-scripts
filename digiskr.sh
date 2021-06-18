@@ -229,7 +229,7 @@ start_menu() {
 	==== FlyDog SDR Project | SDRotg.com ====
 	==== Digiskimmer Installation Wizard ====
 
-	${TIP} Only Use This Script on FlyDog SDR
+	${TIP} Only Use This Script on FlyDog SDR!
 
 	=== Install & Uninstall ===
 
