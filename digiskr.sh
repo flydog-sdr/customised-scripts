@@ -309,4 +309,4 @@ main() {
 	check_digiskr
 	start_menu
 }
-main "$@"; exit
+main "$@"
