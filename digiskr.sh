@@ -229,6 +229,8 @@ start_menu() {
 	==== FlyDog SDR Project | SDRotg.com ====
 	==== Digiskimmer Installation Wizard ====
 
+	${TIP} Only Use This Script on FlyDog SDR
+
 	=== Install & Uninstall ===
 
 	${Green_font_prefix}1.${Font_color_suffix} Install Digiskimmer
