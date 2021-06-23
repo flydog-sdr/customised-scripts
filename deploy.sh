@@ -49,7 +49,7 @@ compatibility_settings() {
   cat ${BASE_PATH}/VER > /etc/kiwi.config/_VER
   # For FlyDog SDR under v1.4282
   #sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
-      -i /etc/kiwi.config/frpc*
+  #    -i /etc/kiwi.config/frpc*
   # For FlyDog SDR under v1.4293
   # For FlyDog SDR under v1.433
   #if [[ ! -f /etc/kiwi.config/samples/timecode.test.au ]]; then
