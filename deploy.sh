@@ -75,7 +75,7 @@ do_upgrade() {
       fi
     fi
     docker tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest
-    docker image rm -f bclswl0827/flydog-sdr:latest
+    docker image rm -f bclswl0827/flydog-sdr:latest &>/dev/null
   else
     if ! docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null; then
       if ! docker pull bclswl0827/flydog-sdr:latest &>/dev/null; then
@@ -87,7 +87,7 @@ do_upgrade() {
         exit 1
       fi
       docker tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest
-      docker image rm -f bclswl0827/flydog-sdr:latest
+      docker image rm -f bclswl0827/flydog-sdr:latest &>/dev/null
     fi
   fi
   deploy_new
