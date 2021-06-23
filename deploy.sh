@@ -1,52 +1,88 @@
 #!/usr/bin/env bash
 
 # Define basic variables
-BASE_PATH=$(cd `dirname $0`; pwd)
-IMAGE_LIB="registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr"
-IMAGE_TAG="latest"
-LOCAL_IMAGE_ID=$(docker inspect -f {{".Id"}} ${IMAGE_LIB}:${IMAGE_TAG})
+BASE_PATH="$(cd `dirname $0`; pwd)"
 BACKUP_TAG="$(date +'%Y%m%d')"
 
-backup_old_image() {
-  docker tag ${LOCAL_IMAGE_ID} ${IMAGE_LIB}:${BACKUP_TAG}
-  docker image rm ${IMAGE_LIB}:${IMAGE_TAG}
+# For rolling back when an error occurs
+backup_image() {
+  echo -e "${INFO} Backing up old image, please wait..."
+  docker tag ${CURRENT_IMAGE_ID} flydog-sdr:backup-${BACKUP_TAG}
+  docker image rm -f ${CURRENT_IMAGE_TAG} &>/dev/null
 }
 
-pull_latest_image() {
-  if ! docker pull ${IMAGE_LIB}:${IMAGE_TAG}; then
-    echo "error: Download failed! Trying to use backup node."
-    if ! docker pull bclswl0827/flydog-sdr:${IMAGE_TAG}; then
-      echo "error: Download failed! Falling back to deploy old instance."
-      docker tag ${LOCAL_IMAGE_ID} ${IMAGE_LIB}:${IMAGE_TAG}
-      docker image rm ${IMAGE_LIB}:${BACKUP_TAG}
-      compatibility_settings
-      saving_disk_space
-      exit 1
-    fi
-    docker tag bclswl0827/flydog-sdr:${IMAGE_TAG} ${IMAGE_LIB}:${IMAGE_TAG}
-    docker image rm bclswl0827/flydog-sdr:${IMAGE_TAG}
+# Check country
+check_country() {
+  echo -e "${INFO} Getting country data, please wait..."
+  if ! curl -fsSL -H 'Cache-Control: no-cache' -o /tmp/country_code.tmp ipapi.co/country_code; then
+    COUNTRY="CN"
+  else
+    COUNTRY="$(cat /tmp/country_code.tmp)"
   fi
 }
 
-deploy_new_instance() {
-  docker stop flydog-sdr
-  docker network disconnect --force flydog-sdr flydog-sdr
-  docker rm flydog-sdr
-  docker run -d \
-     --hostname flydog-sdr \
-     --name flydog-sdr \
-     --network flydog-sdr \
-     --privileged \
-     --publish 8073:8073 \
-     --restart always \
-     --volume kiwi.config:/root/kiwi.config \
-     ${IMAGE_LIB}:${IMAGE_TAG}
-  docker image rm -f ${LOCAL_IMAGE_ID}
+# Saving disk space
+clean_work() {
+  docker image rm -f flydog-sdr:backup-${BACKUP_TAG} &>/dev/null
+  docker image prune -f &>/dev/null
+  docker container prune -f &>/dev/null
+  rm -rf ${BASE_PATH}
 }
 
-compatibility_settings() {
+# Deploy newer version
+deploy_new() {
+  echo -e "${INFO} Deploying newer version, please wait..."
+  docker stop flydog-sdr &>/dev/null
+  docker network disconnect --force flydog-sdr flydog-sdr &>/dev/null
+  docker rm flydog-sdr &>/dev/null
+  docker run -d \
+             --hostname flydog-sdr \
+             --name flydog-sdr \
+             --network flydog-sdr \
+             --privileged \
+             --publish 8073:8073 \
+             --restart always \
+             --volume kiwi.config:/root/kiwi.config \
+             registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest
   cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
   cat ${BASE_PATH}/VER > /etc/kiwi.config/_VER
+}
+
+# Execute upgrade
+do_upgrade() {
+  echo -e "${INFO} Pulling latest image, please wait..."
+  if [[ "COUNTRY" != "CN" ]]; then
+    if ! docker pull bclswl0827/flydog-sdr:latest &>/dev/null; then
+      if ! docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null; then
+        echo -e "${ERROR} Download failed, rolling back..."
+        sleep 3s
+        docker tag flydog-sdr:backup-${BACKUP_TAG} ${CURRENT_IMAGE_TAG}
+        extra_script
+        clean_work
+        exit 1
+      fi
+    fi
+    docker tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest
+    docker image rm -f bclswl0827/flydog-sdr:latest
+  else
+    if ! docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null; then
+      if ! docker pull bclswl0827/flydog-sdr:latest &>/dev/null; then
+        echo -e "${ERROR} Download failed, rolling back..."
+        sleep 3s
+        docker tag flydog-sdr:backup-${BACKUP_TAG} ${CURRENT_IMAGE_TAG}
+        extra_script
+        clean_work
+        exit 1
+      fi
+      docker tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest
+      docker image rm -f bclswl0827/flydog-sdr:latest
+    fi
+  fi
+  deploy_new
+}
+
+# Extra scripts for upgrading
+extra_script() {
   # For FlyDog SDR under v1.4282
   #sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
   #    -i /etc/kiwi.config/frpc*
@@ -61,18 +97,24 @@ compatibility_settings() {
   rm -rf /etc/kiwi.config/_VERSION
 }
 
-saving_disk_space() {
-  docker container prune -f
-  docker image prune -f
-  rm -rf ${BASE_PATH}
+# Getting FlyDog SDR status
+flydog_status() {
+  echo -e "${INFO} Getting FlyDog SDR status, please wait..."
+  CONTAINER_ID="$(docker ps -aq --filter name=^/flydog-sdr$)"
+  CURRENT_IMAGE_ID="$(docker images | sed "s;flydog-sdr/admin;;g" | grep "flydog-sdr" | awk '{print $3}')"
+  CURRENT_IMAGE_TAG="$(docker images | sed "s;flydog-sdr/admin;;g" | grep "flydog-sdr" | awk '{print $1":"$2}')"
 }
 
 main() {
-  backup_old_image
-  pull_latest_image
-  deploy_new_instance
-  compatibility_settings
-  saving_disk_space
-  echo "Upgrade finished!"
+  echo -e "${INFO} Upgrade detected, please wait..."
+  sleep 3s
+  check_country
+  flydog_status
+  backup_image
+  do_upgrade
+  extra_script
+  clean_work
+  echo -e "${INFO} Upgrade finished, exiting..."
+  sleep 3s
 }
 main "$@"
