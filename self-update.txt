@@ -19,8 +19,8 @@ SCRIPT_ID=3da85fea
 
 # Define basic variables
 DIR_TMP="$(mktemp -d)"
-DOWNLOAD_LINK_A="bclswl0827.coding.net/p/flydog-sdr/d/api/git/archive/master"
-DOWNLOAD_LINK_B="sdrotg.com/scripts.zip"
+DOWNLOAD_LINK_A="sdrotg.com/scripts.zip"
+DOWNLOAD_LINK_B="bclswl0827.coding.net/p/flydog-sdr/d/api/git/archive/master"
 
 # Define font colour
 Green_font_prefix="\033[32m"
@@ -35,27 +35,16 @@ ERROR="${Red_font_prefix}[ERROR]${Font_color_suffix}"
 TIP="${Green_font_prefix}[TIP]${Font_color_suffix}"
 
 curl() {
-    $(type -P curl) --retry 10 --retry-delay 5 --retry-max-time 60 "$@"
-}
-
-# Check country
-check_country() {
-	echo -e "${INFO} Getting country data, please wait..."
-	if ! curl -fSL -H 'Cache-Control: no-cache' -o ${DIR_TMP}/country_code.tmp ipapi.co/country_code &>/dev/null; then
-		COUNTRY="CN"
-	else
-		COUNTRY="$(cat ${DIR_TMP}/country_code.tmp)"
-	fi
-	rm -rf ${DIR_TMP}/*.tmp
+  $(type -P curl) --retry 10 --retry-delay 5 --retry-max-time 60 "$@"
 }
 
 # Check connectivity
 check_net() {
-	if [[ "$(curl -fsSIL microsoft.com -w %{http_code} | tail -n1)" != "200" ]]; then
-		echo -e "${ERROR} Internet is not connected, exiting..."
-		sleep 3s
-		exit 1
-	fi
+  if [[ "$(curl -fsSIL microsoft.com -w %{http_code} | tail -n1)" != "200" ]]; then
+    echo -e "${ERROR} Internet is not connected, exiting..."
+    sleep 3s
+    exit 1
+  fi
 }
 
 # Check UID (should be running as root)
@@ -83,23 +72,14 @@ execute_upgrade() {
   rm -rf ${DIR_TMP}
 }
 
-# Get deployment
+# Fetch deployment
 fetch_deployment() {
-  if [[ "${COUNTRY}" == "CN" ]]; then
-    if ! curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${1} &>/dev/null; then
-      if ! curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${2} &>/dev/null; then
-        echo -e "${ERROR} Download failed, exiting..."
-        sleep 3s
-        exit 1
-      fi
-    fi
-  else
-    if ! curl -fSL -H 'Cache-Control: no-cache' -o ${DIR_TMP}/scripts.zip ${2} &>/dev/null; then
-      if ! curl -fSL -H 'Cache-Control: no-cache' -o ${DIR_TMP}/scripts.zip ${1} &>/dev/null; then
-        echo -e "${ERROR} Download failed, exiting..."
-        sleep 3s
-        exit 1
-      fi
+  echo -e "${INFO} Fetching deployment, please wait..."
+  if ! curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${1} &>/dev/null; then
+    if ! curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${2} &>/dev/null; then
+      echo -e "${ERROR} Download failed, exiting..."
+      sleep 3s
+      exit 1
     fi
   fi
   busybox unzip ${DIR_TMP}/scripts.zip -d ${DIR_TMP} &>/dev/null
@@ -107,7 +87,7 @@ fetch_deployment() {
   chmod -R 755 ${DIR_TMP}
 }
 
-# Get version number
+# Fetch version number
 fetch_version() {
   if ! curl -H 'Cache-Control: no-cache' -o ${DIR_TMP}/LOCAL_VER flydog-sdr:8073/VER &>/dev/null; then
     if [[ ! -f "/etc/kiwi.config/_VER" ]]; then
@@ -136,7 +116,6 @@ main() {
   check_uid
   update_enabled
   check_net
-  check_country
   fetch_deployment ${DOWNLOAD_LINK_A} ${DOWNLOAD_LINK_B}
   fetch_version
   compare_version
