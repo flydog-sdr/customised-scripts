@@ -18,88 +18,128 @@ SCRIPT_ID=3da85fea
 # https://raw.githubusercontent.com/flydog-sdr/customised-scripts/master/self-update.txt
 
 # Define basic variables
-NETWORK_CHECK_URL="baidu.com"
-NETWORK_CHECK_RESPONSE="200"
-CONF_DIR="/etc/kiwi.config"
-DOWNLOAD_LINK="https://bclswl0827.coding.net/p/flydog-sdr/d/api/git/archive/master"
-DEPLOY_SCRIPT="deploy.sh"
 DIR_TMP="$(mktemp -d)"
+DOWNLOAD_LINK_A="bclswl0827.coding.net/p/flydog-sdr/d/api/git/archive/master"
+DOWNLOAD_LINK_B="sdrotg.com/scripts.zip"
 
-# System utilities
-BUSYBOX_PATH=$(type -P busybox)
-CURL_PATH=$(type -P curl)
-JQ_PATH=$(type -P jq)
+# Define font colour
+Green_font_prefix="\033[32m"
+Red_font_prefix="\033[31m"
+Green_background_prefix="\033[42;37m"
+Red_background_prefix="\033[41;37m"
+Font_color_suffix="\033[0m"
+
+# Define log colour
+INFO="${Green_font_prefix}[INFO]${Font_color_suffix}"
+ERROR="${Red_font_prefix}[ERROR]${Font_color_suffix}"
+TIP="${Green_font_prefix}[TIP]${Font_color_suffix}"
 
 curl() {
-  ${CURL_PATH} -L -q --retry 10 --retry-delay 10 --retry-max-time 60 "$@"
+    $(type -P curl) --retry 10 --retry-delay 5 --retry-max-time 60 "$@"
 }
 
-check_if_running_as_root() {
-  if [[ ${UID} -ne '0' ]]; then
-    echo "Not running with root, exiting..."
+# Check country
+check_country() {
+	echo -e "${INFO} Getting country data, please wait..."
+	if ! curl -fSL -H 'Cache-Control: no-cache' -o ${DIR_TMP}/country_code.tmp ipapi.co/country_code &>/dev/null; then
+		COUNTRY="CN"
+	else
+		COUNTRY="$(cat ${DIR_TMP}/country_code.tmp)"
+	fi
+	rm -rf ${DIR_TMP}/*.tmp
+}
+
+# Check connectivity
+check_net() {
+	if [[ "$(curl -fsSIL microsoft.com -w %{http_code} | tail -n1)" != "200" ]]; then
+		echo -e "${ERROR} Internet is not connected, exiting..."
+		sleep 3s
+		exit 1
+	fi
+}
+
+# Check UID (should be running as root)
+check_uid() {
+  if [[ "${UID}" != "0" ]]; then
+    echo -e "${ERROR} Not running with root, exiting..."
+    sleep 3s
     exit 1
   fi
 }
 
-check_if_update_is_enabled() {
-  docker inspect -f {{".State.Running"}} flydog-sdr | grep -q -s "true"
-  if [[ $? -ne 0 ]]; then
-    echo "FlyDog SDR is not running, will now wake up."
-    docker restart flydog-sdr
-    sleep 5s
-  fi
-  if [[ $(cat ${CONF_DIR}/_UPDATE) -ne 1 ]]; then
-    echo "Auto-update is disabled, exiting..."
+# Compare version numbers
+compare_version() {
+  if [[ "${REMOTE_VER}" = "${LOCAL_VER}" ]]; then
+    rm -rf "${DIR_TMP}"
+    echo -e "${INFO} Already the latest version, exiting..."
+    sleep 3s
     exit 0
   fi
 }
 
-check_internet_connectivity() {
-  if [[ $(${CURL_PATH} -I -s ${NETWORK_CHECK_URL} -w %{http_code} | tail -n1) != ${NETWORK_CHECK_RESPONSE} ]]; then
-    echo "Internet is not connected, exiting..."
-    exit 1
-  fi
+# Execute upgrade script
+execute_upgrade() {
+  find ${DIR_TMP} -name "deploy.sh" | bash
+  rm -rf ${DIR_TMP}
 }
 
-download_files() {
-  if ! curl -R -H 'Cache-Control: no-cache' -o ${2}/scripts.zip ${1}; then
-    echo "error: Download failed! Please check your network or try again."
-    exit 1
-  fi
-  ${BUSYBOX_PATH} unzip ${2}/scripts.zip -d ${2}
-  chmod -R 755 ${2}
-}
-
-compare_version() {
-  REMOTE_VER=$(find ${DIR_TMP} -name "VER" | xargs cat)
-  if ! curl http://flydog-sdr:8073/VER; then
-    if [[ ! -f /etc/kiwi.config/_VER ]]; then
-      echo 0 > /etc/kiwi.config/_VER
-      CURRENT_VER=$(cat /etc/kiwi.config/_VER)
-    else
-      CURRENT_VER=$(cat /etc/kiwi.config/_VER)
+# Get deployment
+fetch_deployment() {
+  if [[ "${COUNTRY}" == "CN" ]]; then
+    if ! curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${1} &>/dev/null; then
+      if ! curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${2} &>/dev/null; then
+        echo -e "${ERROR} Download failed, exiting..."
+        sleep 3s
+        exit 1
+      fi
     fi
   else
-    CURRENT_VER=$(curl -s http://flydog-sdr:8073/VER | ${JQ_PATH} --raw-output '(.maj|tostring) + (.min|tostring)')
+    if ! curl -fSL -H 'Cache-Control: no-cache' -o ${DIR_TMP}/scripts.zip ${2} &>/dev/null; then
+      if ! curl -fSL -H 'Cache-Control: no-cache' -o ${DIR_TMP}/scripts.zip ${1} &>/dev/null; then
+        echo -e "${ERROR} Download failed, exiting..."
+        sleep 3s
+        exit 1
+      fi
+    fi
   fi
-  if [[ ${REMOTE_VER} -eq ${CURRENT_VER} ]]; then
-    echo " | Already the latest version, exiting..."
-    rm -rf "${DIR_TMP}"
-    exit 0
-  fi
+  busybox unzip ${DIR_TMP}/scripts.zip -d ${DIR_TMP} &>/dev/null
+  rm -rf ${DIR_TMP}/scripts.zip
+  chmod -R 755 ${DIR_TMP}
 }
 
-upgrade_flydog_sdr() {
-  find ${DIR_TMP} -name "${DEPLOY_SCRIPT}" | bash
-  rm -rf "${DIR_TMP}"
+# Get version number
+fetch_version() {
+  if ! curl -H 'Cache-Control: no-cache' -o ${DIR_TMP}/LOCAL_VER flydog-sdr:8073/VER &>/dev/null; then
+    if [[ ! -f "/etc/kiwi.config/_VER" ]]; then
+      echo "0" > /etc/kiwi.config/_VER
+      LOCAL_VER="$(cat /etc/kiwi.config/_VER)"
+    else
+      LOCAL_VER="$(cat /etc/kiwi.config/_VER)"
+    fi
+  else
+    LOCAL_VER="$(cat ${DIR_TMP}/LOCAL_VER | jq --raw-output '(.maj|tostring) + (.min|tostring)')"
+    rm -rf ${DIR_TMP}/LOCAL_VER
+  fi
+  REMOTE_VER="$(find ${DIR_TMP} -name "VER" | xargs cat)"
+}
+
+# Check update settings
+update_enabled() {
+  if [[ "$(cat /etc/kiwi.config/_UPDATE)" != "1" ]]; then
+    echo -e "${INFO} Update is disabled, exiting..."
+    sleep 3s
+    exit 0
+  fi
 }
 
 main() {
-  check_if_running_as_root
-  check_if_update_is_enabled
-  check_internet_connectivity
-  download_files ${DOWNLOAD_LINK} ${DIR_TMP}
+  check_uid
+  update_enabled
+  check_net
+  check_country
+  fetch_deployment ${DOWNLOAD_LINK_A} ${DOWNLOAD_LINK_B}
+  fetch_version
   compare_version
-  upgrade_flydog_sdr
+  execute_upgrade
 }
 main "$@"; exit
