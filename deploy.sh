@@ -100,8 +100,7 @@ do_upgrade() {
 # Extra scripts for upgrading
 extra_script() {
   # For FlyDog SDR under v1.4282
-  sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
-      -i /etc/kiwi.config/frpc*
+  sed -e "s/login_fail_exit = true/login_fail_exit = false/g" -i /etc/kiwi.config/frpc*
   # For FlyDog SDR under v1.4541
   rm -rf /etc/kiwi.config/_VERSION
 }
