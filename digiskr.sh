@@ -101,13 +101,15 @@ install_digiskr() {
     elif [[ "DIGISKR_IMAGE" == "false" ]] && [[ "DIGISKR_DEPLOYED" == "false" ]] && [[ "DIGISKR_RUNNING" == "false" ]]; then
         echo -e "${INFO} Pulling Digiskimmer Docker image from registry, please wait..."
         if [[ "${COUNTRY}" != "CN" ]]; then
-            if ! docker pull bclswl0827/digiskr:latest; then
+            docker pull bclswl0827/digiskr:latest
+            if [[ "$?" != "0" ]]; then
                 docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/digiskr:latest
             fi
             docker tag bclswl0827/digiskr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/digiskr:latest
             docker image rm bclswl0827/digiskr:latest
         else
-            if ! docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/digiskr:latest; then
+            docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/digiskr:latest
+            if [[ "$?" != "0" ]]; then
                 docker pull bclswl0827/digiskr:latest
                 docker tag bclswl0827/digiskr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/digiskr:latest
                 docker image rm bclswl0827/digiskr:latest
@@ -161,17 +163,20 @@ check_net() {
 # Check environment (get country and timezone)
 check_env() {
     echo -e "${INFO} Getting country and timezone data, please wait..."
-    if ! curl -fsSL -H 'Cache-Control: no-cache' -o /tmp/country_code.txt.tmp ipapi.co/country_code; then
+    curl -fsSL -H 'Cache-Control: no-cache' -o /tmp/country_code.txt.tmp ipapi.co/country_code
+    if [[ "$?" != "0" ]]; then
         COUNTRY="CN"
     else
         COUNTRY="$(cat /tmp/country_code.txt.tmp)"
     fi
-    if ! curl -fsSL -H 'Cache-Control: no-cache' -o /tmp/timezone.txt.tmp get.geojs.io/v1/ip/geo.json; then
+    curl -fsSL -H 'Cache-Control: no-cache' -o /tmp/timezone.txt.tmp get.geojs.io/v1/ip/geo.json
+    if [[ "$?" != "0" ]]; then
         TIMEZONE="Asia/Shanghai"
     else
         TIMEZONE="$(cat /tmp/timezone.txt.tmp | cut -d ""\" -f16)"
     fi
-    if ! curl -s -H 'Cache-Control: no-cache' -o /tmp/users_max.txt.tmp localhost:8073/status; then
+    curl -s -H 'Cache-Control: no-cache' -o /tmp/users_max.txt.tmp localhost:8073/status
+    if [[ "$?" != "0" ]]; then
         USERS_MAX="3"
     else
         USERS_MAX="$(grep -s "users_max" /tmp/users_max.txt.tmp | cut -d "=" -f2)"

@@ -75,8 +75,10 @@ execute_upgrade() {
 # Fetch deployment
 fetch_deployment() {
   echo -e "${INFO} Fetching deployment, please wait..."
-  if ! curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${1} &>/dev/null; then
-    if ! curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${2} &>/dev/null; then
+  curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${1} &>/dev/null
+  if [[ "$?" != "0" ]]; then
+    curl -fSL -H 'Cache-Control: no-cache' -o  ${DIR_TMP}/scripts.zip ${2} &>/dev/null
+    if [[ "$?" != "0" ]]; then
       echo -e "${ERROR} Download failed, exiting..."
       sleep 3s
       exit 1

@@ -26,10 +26,12 @@ backup_image() {
 # Check country
 check_country() {
   echo -e "${INFO} Getting country data, please wait..."
-  if ! curl -fsSL -H 'Cache-Control: no-cache' -o /tmp/country_code.tmp ipapi.co/country_code; then
+  curl -fsSL -H 'Cache-Control: no-cache' -o /tmp/country_code.tmp ipapi.co/country_code &>/dev/null
+  if [[ "$?" != "0" ]]; then
     COUNTRY="CN"
   else
     COUNTRY="$(cat /tmp/country_code.tmp)"
+    rm -rf /tmp/country_code.tmp
   fi
 }
 
@@ -62,8 +64,10 @@ deploy_new() {
 do_upgrade() {
   echo -e "${INFO} Pulling latest image, please wait..."
   if [[ "COUNTRY" != "CN" ]]; then
-    if ! docker pull bclswl0827/flydog-sdr:latest &>/dev/null; then
-      if ! docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null; then
+    docker pull bclswl0827/flydog-sdr:latest &>/dev/null
+    if [[ "$?" != "0" ]]; then
+      docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null
+      if [[ "$?" != "0" ]]; then
         echo -e "${ERROR} Download failed, rolling back..."
         sleep 3s
         docker tag flydog-sdr:backup-${BACKUP_TAG} ${CURRENT_IMAGE_TAG}
@@ -75,8 +79,10 @@ do_upgrade() {
     docker tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest
     docker image rm -f bclswl0827/flydog-sdr:latest &>/dev/null
   else
-    if ! docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null; then
-      if ! docker pull bclswl0827/flydog-sdr:latest &>/dev/null; then
+    docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null
+    if [[ "$?" != "0" ]]; then
+      docker pull bclswl0827/flydog-sdr:latest &>/dev/null
+      if [[ "$?" != "0" ]]; then
         echo -e "${ERROR} Download failed, rolling back..."
         sleep 3s
         docker tag flydog-sdr:backup-${BACKUP_TAG} ${CURRENT_IMAGE_TAG}
@@ -94,15 +100,8 @@ do_upgrade() {
 # Extra scripts for upgrading
 extra_script() {
   # For FlyDog SDR under v1.4282
-  #sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
-  #    -i /etc/kiwi.config/frpc*
-  # For FlyDog SDR under v1.4293
-  # For FlyDog SDR under v1.433
-  #if [[ ! -f /etc/kiwi.config/samples/timecode.test.au ]]; then
-  #  if ! curl -L -q --retry 10 --retry-delay 10 --retry-max-time 60 -o /etc/kiwi.config/samples/timecode.test.au https://bclswl0827.coding.net/p/flydog-sdr/d/file/git/raw/master/timecode.test.au; then
-  #    curl -L -q --retry 10 --retry-delay 10 --retry-max-time 60 -o /etc/kiwi.config/samples/timecode.test.au https://raw.githubusercontent.com/jks-prv/Beagle_SDR_GPS/master/unix_env/kiwi.config/samples/timecode.test.au
-  #  fi
-  #fi
+  sed -e "s/login_fail_exit = true/login_fail_exit = false/g" \
+      -i /etc/kiwi.config/frpc*
   # For FlyDog SDR under v1.4541
   rm -rf /etc/kiwi.config/_VERSION
 }
