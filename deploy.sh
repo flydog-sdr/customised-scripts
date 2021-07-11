@@ -48,11 +48,9 @@ deploy_new() {
   docker network disconnect --force flydog-sdr flydog-sdr &>/dev/null
   docker rm flydog-sdr &>/dev/null
   docker run -d \
-             --hostname flydog-sdr \
              --name flydog-sdr \
-             --network flydog-sdr \
+             --network host \
              --privileged \
-             --publish 8073:8073 \
              --restart always \
              --volume kiwi.config:/root/kiwi.config \
              registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest

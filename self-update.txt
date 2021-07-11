@@ -89,16 +89,11 @@ fetch_deployment() {
 
 # Fetch version number
 fetch_version() {
-  if ! curl -H 'Cache-Control: no-cache' -o ${DIR_TMP}/LOCAL_VER flydog-sdr:8073/VER &>/dev/null; then
-    if [[ ! -f "/etc/kiwi.config/_VER" ]]; then
-      echo "0" > /etc/kiwi.config/_VER
-      LOCAL_VER="$(cat /etc/kiwi.config/_VER)"
-    else
-      LOCAL_VER="$(cat /etc/kiwi.config/_VER)"
-    fi
+  if [[ ! -f "/etc/kiwi.config/_VER" ]]; then
+    echo "0" > /etc/kiwi.config/_VER
+    LOCAL_VER="$(cat /etc/kiwi.config/_VER)"
   else
-    LOCAL_VER="$(cat ${DIR_TMP}/LOCAL_VER | jq --raw-output '(.maj|tostring) + (.min|tostring)')"
-    rm -rf ${DIR_TMP}/LOCAL_VER
+    LOCAL_VER="$(cat /etc/kiwi.config/_VER)"
   fi
   REMOTE_VER="$(find ${DIR_TMP} -name "VER" | xargs cat)"
 }
