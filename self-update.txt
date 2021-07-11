@@ -40,7 +40,7 @@ curl() {
 
 # Check connectivity
 check_net() {
-  if [[ "$(curl -fsSIL microsoft.com -w %{http_code} | tail -n1)" != "200" ]]; then
+  if [[ "$(curl -fsSIL fast.com -w %{http_code} | tail -n1)" != "200" ]]; then
     echo -e "${ERROR} Internet is not connected, exiting..."
     sleep 3s
     exit 1
