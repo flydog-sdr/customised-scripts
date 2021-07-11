@@ -125,4 +125,4 @@ main() {
   echo -e "${INFO} Upgrade finished, exiting..."
   sleep 3s
 }
-main "$@"
+main "$@"; exit
