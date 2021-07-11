@@ -6,7 +6,7 @@ SCRIPT_ID=3da85fea
 # This Bash script to install the latest release of FlyDog SDR:
 # https://github.com/flydog-sdr/FlyDog_SDR_GPS
 
-# Depends on BusyBox, cURL and jq, please solve it yourself
+# Depends on BusyBox, cURL, please solve it yourself
 # You may plan to execute this Bash script regularly:
 # install -m 755 self-update.txt /usr/bin/updater.sh
 # 0 4 * * * /usr/bin/updater.sh
