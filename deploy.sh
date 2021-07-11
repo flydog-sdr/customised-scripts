@@ -46,8 +46,7 @@ clean_work() {
 # Deploy newer version
 deploy_new() {
   echo -e "${INFO} Deploying newer version, please wait..."
-  docker stop flydog-sdr &>/dev/null
-  docker network disconnect --force flydog-sdr flydog-sdr &>/dev/null
+  docker kill flydog-sdr &>/dev/null
   docker rm flydog-sdr &>/dev/null
   docker run -d \
              --name flydog-sdr \
@@ -56,8 +55,6 @@ deploy_new() {
              --restart always \
              --volume kiwi.config:/root/kiwi.config \
              registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest
-  cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
-  cat ${BASE_PATH}/VER > /etc/kiwi.config/_VER
 }
 
 # Execute upgrade
@@ -99,6 +96,8 @@ do_upgrade() {
 
 # Extra scripts for upgrading
 extra_script() {
+  cat ${BASE_PATH}/self-update.txt > /usr/bin/updater.sh
+  cat ${BASE_PATH}/VER > /etc/kiwi.config/_VER
   # For FlyDog SDR under v1.4282
   sed -e "s/login_fail_exit = true/login_fail_exit = false/g" -i /etc/kiwi.config/frpc*
   # For FlyDog SDR under v1.4541
