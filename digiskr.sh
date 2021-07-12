@@ -20,6 +20,7 @@ TIP="${Green_font_prefix}[TIP]${Font_color_suffix}"
 configure_digiskr() {
     mkdir -p /etc/digiskr
     echo
+    read -p " [0] Please enter the HTTP port of FlyDog SDR (Default is 8073): " PORT
     read -p " [1] Please enter the user password of FlyDog SDR (press Enter for none): " PASSWORD
     read -p " [2] Please enter the time limit exemption password of FlyDog SDR (press Enter for none): " TLIMIT_PASSWORD
     while [[ "x${CALLSIGN}" == "x" ]] 
@@ -67,7 +68,7 @@ LOG_BACKUP_COUNT = 0
 LOG_SPOTS = False
 WSJTX = {'decoding_depth_global':3,'decoding_depth_modes':{'FT8':3}}
 DECODER_QUEUE = {'maxsize':10,'workers':2}
-STATIONS = {'flydog-sdr':{'server_host':'localhost','server_port':8073,'password':'${PASSWORD}','tlimit_password':'${TLIMIT_PASSWORD}','callsign':'${CALLSIGN}'}}
+STATIONS = {'flydog-sdr':{'server_host':'localhost','server_port':'${PORT}','password':'${PASSWORD}','tlimit_password':'${TLIMIT_PASSWORD}','callsign':'${CALLSIGN}'}}
 SCHEDULES = {'*':{'flydog-sdr':[${BANDS}]}}
 EOF
     sleep 5s
