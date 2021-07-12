@@ -54,7 +54,7 @@ deploy_new() {
              --privileged \
              --restart always \
              --volume kiwi.config:/root/kiwi.config \
-             registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest
+             registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null
 }
 
 # Execute upgrade
