@@ -19,7 +19,7 @@ TIP="${Green_font_prefix}[TIP]${Font_color_suffix}"
 # For rolling back when an error occurs
 backup_image() {
   echo -e "${INFO} Backing up old image, please wait..."
-  docker tag ${CURRENT_IMAGE_ID} flydog-sdr:backup-${BACKUP_TAG}
+  docker image tag ${CURRENT_IMAGE_ID} flydog-sdr:backup-${BACKUP_TAG}
   docker image rm -f ${CURRENT_IMAGE_TAG} &>/dev/null
 }
 
