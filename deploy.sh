@@ -67,13 +67,13 @@ do_upgrade() {
       if [[ "$?" != "0" ]]; then
         echo -e "${ERROR} Download failed, rolling back..."
         sleep 3s
-        docker tag flydog-sdr:backup-${BACKUP_TAG} ${CURRENT_IMAGE_TAG}
+        docker image tag flydog-sdr:backup-${BACKUP_TAG} ${CURRENT_IMAGE_TAG}
         extra_script
         clean_work
         exit 1
       fi
     fi
-    docker tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null
+    docker image tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null
     docker image rm -f bclswl0827/flydog-sdr:latest &>/dev/null
   else
     docker pull registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null
@@ -82,12 +82,12 @@ do_upgrade() {
       if [[ "$?" != "0" ]]; then
         echo -e "${ERROR} Download failed, rolling back..."
         sleep 3s
-        docker tag flydog-sdr:backup-${BACKUP_TAG} ${CURRENT_IMAGE_TAG}
+        docker image tag flydog-sdr:backup-${BACKUP_TAG} ${CURRENT_IMAGE_TAG}
         extra_script
         clean_work
         exit 1
       fi
-      docker tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null
+      docker image tag bclswl0827/flydog-sdr:latest registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest &>/dev/null
       docker image rm -f bclswl0827/flydog-sdr:latest &>/dev/null
     fi
   fi
