@@ -105,6 +105,7 @@ extra_script() {
   # For FlyDog SDR under v1.461
   rm -rf /etc/kiwi.config/samples
   docker cp $(docker create --name samples registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest):/root/kiwi.config/samples /etc/kiwi.config/samples
+  docker rm -f samples &>/dev/null
 }
 
 # Getting FlyDog SDR status
