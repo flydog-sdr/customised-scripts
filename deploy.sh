@@ -102,6 +102,9 @@ extra_script() {
   sed -e "s/login_fail_exit = true/login_fail_exit = false/g" -i /etc/kiwi.config/frpc*
   # For FlyDog SDR under v1.4541
   rm -rf /etc/kiwi.config/_VERSION
+  # For FlyDog SDR under v1.461
+  rm -rf /etc/kiwi.config/samples
+  docker cp $(docker create --name samples registry.cn-shanghai.aliyuncs.com/flydog-sdr/flydog-sdr:latest):/root/kiwi.config/samples /etc/kiwi.config/samples
 }
 
 # Getting FlyDog SDR status
