@@ -20,7 +20,7 @@ SCRIPT_ID=3da85fea
 # Define basic variables
 DIR_TMP="$(mktemp -d)"
 DOWNLOAD_LINK_A="sdrotg.com/scripts.zip"
-DOWNLOAD_LINK_B="www.sdrotg.com/scripts.zip"
+DOWNLOAD_LINK_B="cdn.staticaly.com/gh/flydog-sdr/docs/master/docs/.vuepress/public/scripts.zip"
 #DOWNLOAD_LINK_B="bclswl0827.coding.net/p/flydog-sdr/d/api/git/archive/master"
 
 # Define font colour
